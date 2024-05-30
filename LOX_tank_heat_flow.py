@@ -5,13 +5,13 @@ tempSurrounding = 303  # temperature of air surrounding the fuel/oxidizer
                        # tank/insulation (K)
 tempTank = 90  # temperature of the oxidizer tank (K)
 tempBoilOffLOX = 90  # temperature of evaporation for LOX (K)
-diameterTank = 0.15  # diameter of the tank (m)
-lengthTank = 0.4  # length of cylindrical tank sidewall (m)
+diameterTank = 0.1  # diameter of the tank (m)
+lengthTank = 0.45  # length of cylindrical tank sidewall (m)
 roundEndCaps = 'no'  # 'yes' or 'no' for round tank end caps
 thicknessTank = 0.003  # thickness of tank walls (m)
 
 # MLI info
-numLayers = 20  # number of MLI layers
+numLayers = 35  # number of MLI layers
 layerDensity = 14  # number of MLI layers per cm
 emissivity = 0.01  # effective emittance between 0.05 & 0.007
 
