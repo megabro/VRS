@@ -99,7 +99,7 @@ densityLOX = 1141  # (kg/m^3)
 densitySteel = 8000  # (kg/m^3)
 
 # Time since fueling (s)
-time = 10
+time = 1
 
 # Latent and specific heat transfer (J)
 energyTempIncrease = (tempBoilOffLOX - tempTank) * (
@@ -108,14 +108,6 @@ energyTempIncrease = (tempBoilOffLOX - tempTank) * (
 heatTransferLatent = heatTransfer * time - energyTempIncrease
 
 # Mass of boiled off LOX
-massBoilOff = heatTransferLatent / latentHeatCapacityLOX
-
-# Results
-if (tempBoilOffLOX - tempTank) > 0:
-    tempIncrease = tempBoilOffLOX - tempTank
-    print(f'In the {time} seconds between filling the LOX and takeoff, the '
-          f'LOX temperature rises by {tempIncrease:.1f} K which puts the final '
-          f'temperature at {tempIncrease + tempTank} K')
-else:
-    print(f'The LOX remains constant for the {time} seconds after fueling '
-          f'however {massBoilOff:.3f} kg of LOX boil off.')
+latentHeatofVaporizationLOX = 213 * 10 ** 3
+print(f"The boil off rate according to the latent heat of vaporization formula is:{heatTransfer / latentHeatofVaporizationLOX} kg/s")
+print(f"The latent heat assumption is wrong as this is an unrealistic boil off rate.")
