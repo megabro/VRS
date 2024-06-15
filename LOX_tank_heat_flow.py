@@ -1,60 +1,113 @@
 from math import pi
 
-'''
-This code approximates the heatflow through different
-mediums surrounding the air in the fuel/oxidizer tank. The
-following assumptions have been made:
-  -   surface area of the internal/external fuel/oxidizer
-      tank/insulation is identical
-  -   the heat flow conducts through the tank and insulation
-      and convects into air.
-  -   tempSurroundings = tempInitial (in the case of initial
-      pressurization)
- The temperature boundaries are as follows:
-  -   temp1 inside the tank (K)
-  -   temp2 between the tank and insulation (K)
-  -   temp3 on the external side of the insulation (K)
-  -   tempSurrounding is temperature of the surroundings (K)
-'''
-
-# Constants
-tempSurrounding = 303  # temperature of air surrounding the 
-                       # fuel/oxidizer tank/insulation (K)
-temp1 = 90  # temperature of the fuel/oxidizer tank (K)
-diameterTank = 0.15  # diameter of the tank (m)
-lengthTank = 0.4  # length of cylindrical tank sidewall (m)
+# Tank info
+tempSurrounding = 303  # temperature of air surrounding the fuel/oxidizer
+                       # tank/insulation (K)
+tempTank = 90  # temperature of the oxidizer tank (K)
+tempBoilOffLOX = 90  # temperature of evaporation for LOX (K)
+diameterTank = 0.1  # diameter of the tank (m)
+lengthTank = 0.45  # length of cylindrical tank sidewall (m)
 roundEndCaps = 'no'  # 'yes' or 'no' for round tank end caps
+thicknessTank = 0.003  # thickness of tank walls (m)
+
+# MLI info
+numLayers = 35  # number of MLI layers
+layerDensity = 14  # number of MLI layers per cm
+emissivity = 0.01  # effective emittance between 0.05 & 0.007
 
 # Surface area calculation
 if roundEndCaps == 'no':
     # Surface area calculation for cylindrical tank with flat end caps
-    cylinder = (2 * pi * (diameterTank / 2) * lengthTank + 
-               2 * pi * (diameterTank / 2)**2)
+    cylinder = (2 * pi * (diameterTank / 2) * lengthTank +
+                2 * pi * (diameterTank / 2) ** 2)
 else:
-    # Surface area calculation for cylindrical tank with 
-    # rounded hemispherical end caps
-    cylinder = (2 * pi * (diameterTank / 2) * lengthTank + 
-               4 * pi * (diameterTank / 2)**2)
+    # Surface area calculation for cylindrical tank with rounded
+    # hemispherical end caps
+    cylinder = (2 * pi * (diameterTank / 2) * lengthTank +
+                4 * pi * (diameterTank / 2) ** 2)
 
-surfaceArea = cylinder  # surface area of the fuel/oxidizer 
-                        # tank/insulation (m^2)
+surfaceArea = cylinder  # surface area of the fuel/oxidizer tank/insulation (m^2)
 
-# Coefficients and thicknesses
-kTank = 14.4  # fuel/oxidizer tanks conduction coefficient (W/(m*K))
-kIns = 0.016  # fuel/oxidizer tank insulations conduction coefficient (W/(m*K))
-xTank = 0.003  # fuel/oxidizer tank thickness (m)
-xIns = 0.002  # fuel/oxidizer tank insulation thickness (m)
-hAir = 20.83  # convection coefficient of air (W/(m^2*K))
+# Volume calculation
+if roundEndCaps == 'no':
+    # Volume calculation for cylindrical tank with flat end caps
+    cylinderVol = pi * (diameterTank / 2) ** 2 * lengthTank
+else:
+    # Volume calculation for cylindrical tank with rounded
+    # hemispherical end caps
+    cylinderVol = (pi * (diameterTank / 2) ** 2 * lengthTank +
+                   (4 / 3) * pi * (diameterTank / 2) ** 3)
 
-# Temperature calculations
-temp3 = ((hAir * tempSurrounding + temp1 * (kTank / xTank) * 
-          (kTank / xTank - 1)) / 
-         (hAir - (kTank * kIns) / (xTank * xIns)))
+surfaceArea = cylinder  # surface area of the fuel/oxidizer tank/insulation (m^2)
+volume = cylinderVol  # volume of the fuel/oxidizer tank/insulation (m^3)
 
-temp2 = temp3 * (kIns / xIns) + temp1 * (kTank / xTank)
+def lockheedMliHeatTransfer(area, emissivity, tempLow, tempHigh, numLayers, 
+                            layerDensity):
+    """
+    Calculate the total heat flux through multi-layer insulation (MLI)
+    using the Lockheed MLI equation including both radiative and
+    conductive components.
 
-# Heat flow calculation
-heatFlow = (kTank * (temp2 - temp1)) / xTank
+    Parameters:
+    - area (float): surface area of the MLI insulation (m^2)
+    - emissivity (float): The MLI shield emissivity of.
+    - tempLow (float): Temperature of one surface (K).
+    - tempHigh (float): Temperature of the other surface (K).
+    - numLayers (int): Number of MLI layers.
+    - layerDensity (float): MLI layer density (layers/cm).
 
-# Output
-print('The heat flow with the chosen insulation is:', round(heatFlow, 0), 'W')
+    Returns:
+    - totalHeatTransfer (float): Total heat transfer rate (W).
+    """
+
+    tempMean = (tempHigh + tempLow) / 2
+
+    # Radiation constant
+    radiationConstant = 5.39e-7
+
+    # Conduction constant
+    conductionConstant = 8.95e-5
+
+    # Radiative heat flux (mW/m^2)
+    radiativeHeatFlux = (emissivity * radiationConstant * 
+                         (tempHigh ** 4.67 - tempLow ** 4.67)) / numLayers
+
+    # Conductive heat flux (mW/m^2)
+    conductiveHeatFlux = (conductionConstant * tempMean * 
+                          layerDensity ** 2.56 * (tempHigh - tempLow)) / numLayers
+
+    # Total heat flux (mW/m^2)
+    totalHeatFlux = radiativeHeatFlux + conductiveHeatFlux
+
+    # Total heat transfer (W)
+    totalHeatTransfer = totalHeatFlux * area * 1000
+
+    return totalHeatTransfer
+
+heatTransfer = lockheedMliHeatTransfer(surfaceArea, emissivity, tempTank, 
+                                       tempSurrounding, numLayers, layerDensity)
+print(f'The total heat transfer through the MLI is: {heatTransfer:.0f} W')
+
+# The temperature difference across the steel LOX tank is assumed to be 0K
+# (this predicts a pessimistic heat transfer).
+
+# Specific heat capacities and density (depend on temperatures!!!)
+specificHeatCapacityLOX = 918  # (J/kg K)
+specificHeatCapacitySteel = 420  # (J/kg K)
+latentHeatCapacityLOX = 214e3  # (J/kg)
+densityLOX = 1141  # (kg/m^3)
+densitySteel = 8000  # (kg/m^3)
+
+# Time since fueling (s)
+time = 1
+
+# Latent and specific heat transfer (J)
+energyTempIncrease = (tempBoilOffLOX - tempTank) * (
+    volume * specificHeatCapacityLOX * densityLOX + 
+    surfaceArea * thicknessTank * specificHeatCapacitySteel * densitySteel)
+heatTransferLatent = heatTransfer * time - energyTempIncrease
+
+# Mass of boiled off LOX
+latentHeatofVaporizationLOX = 213 * 10 ** 3
+print(f"The boil off rate according to the latent heat of vaporization formula is:{heatTransfer / latentHeatofVaporizationLOX} kg/s")
+print(f"The latent heat assumption is wrong as this is an unrealistic boil off rate.")
